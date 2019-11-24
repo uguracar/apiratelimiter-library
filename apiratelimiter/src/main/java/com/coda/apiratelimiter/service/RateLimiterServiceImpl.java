@@ -17,6 +17,11 @@ import com.coda.apiratelimiter.exception.RateLimitedException;
 import com.coda.apiratelimiter.model.RateLimitRequest;
 import com.coda.apiratelimiter.model.RateLimitWindowSize;
 import com.google.common.collect.Iterables;
+import com.netflix.hystrix.HystrixCircuitBreaker;
+import com.netflix.hystrix.HystrixCommandKey;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+
 
 
 @Service
@@ -25,6 +30,7 @@ public class RateLimiterServiceImpl implements RateLimiterService{
     private RedisTemplate<String, String> redisTemplate;
     
     
+    public static final String HYSTRIX_COMMAND_KEY = "coda-xyz";
     private static final String DELIMITER = ":";
     private static final String KEY_PREFIX_SECOND = "coda:s:";
     private static final String KEY_PREFIX_MINUTE = "coda:m:";
@@ -37,9 +43,25 @@ public class RateLimiterServiceImpl implements RateLimiterService{
     }
     
 	@Override
+	@HystrixCommand(
+            commandKey = HYSTRIX_COMMAND_KEY,
+            ignoreExceptions = RateLimitedException.class,
+            fallbackMethod = "rateLimitFallback",
+            commandProperties = {@HystrixProperty(
+                    name = "execution.isolation.thread.timeoutInMilliseconds",
+                    value = "1000"
+            ), @HystrixProperty(
+                    name = "circuitBreaker.requestVolumeThreshold",
+                    value = "5"
+            ), @HystrixProperty(
+                    name = "metrics.rollingStats.timeInMilliseconds",
+                    value = "1000"
+            )},
+            threadPoolProperties = {@HystrixProperty(
+                    name = "coreSize",
+                    value = "20")})
 	public void rateLimit(RateLimitRequest request) {
             Long count = retrieveCount(request);
-            logger.warn("retrieve count: " + count);
             if (rateLimitExceeded(request.getLimit(), count)) {
                 logger.warn("The rate limit has been exceeded for key: " + request.getKey());
                 throw new RateLimitedException(request);
@@ -65,7 +87,6 @@ public class RateLimiterServiceImpl implements RateLimiterService{
 		String key = retrieveKey(request);
         Integer timeout = retrieveTimeout(request);
         TimeUnit timeUnit = retrieveTimeoutUnit(request);
-        logger.warn("increment count key: " + key);
         
         return redisTemplate.execute(new SessionCallback<Boolean>() {
             @Override
@@ -117,5 +138,8 @@ public class RateLimiterServiceImpl implements RateLimiterService{
 	private boolean rateLimitExceeded(Long limit, Long count) {
         return count >= limit;
     }
-
+	
+	public void rateLimitFallback(RateLimitRequest request) {
+		logger.warn("Fallback method executed, Something went wrong with the Rate Limiter.");
+	}
 }
