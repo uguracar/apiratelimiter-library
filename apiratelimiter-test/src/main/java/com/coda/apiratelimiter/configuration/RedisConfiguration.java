@@ -19,20 +19,6 @@ public class RedisConfiguration {
     @Value("${spring.redis.port}")
     private int redisPort;
 
-    /*@SuppressWarnings("deprecation")
-	@Bean
-    public JedisConnectionFactory jedisConnectionFactory(RedisProperties redisProperties) {
-    	List<String> nodes = redisProperties.getSentinel().getNodes();
-    	//String[] nodes = (String[]) nodesStr.toArray();
-    	//System.out.println("Redis nodes" + nodes);
-    	//new HashSet<>(nodesStr);
-        //String[] nodes = redisProperties.getSentinel().getNodes().split(",");
-        RedisSentinelConfiguration config = new RedisSentinelConfiguration(redisProperties.getSentinel().getMaster(), new HashSet<>(nodes));
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(config);
-        jedisConnectionFactory.setPassword(redisProperties.getPassword());
-        return jedisConnectionFactory;
-    }*/
-
     @SuppressWarnings("deprecation")
 	@Bean
     public JedisConnectionFactory jedisConnectionFactory() {
