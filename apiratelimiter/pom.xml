@@ -42,7 +42,6 @@
     		<version>2.9.0</version>
     		<type>jar</type>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

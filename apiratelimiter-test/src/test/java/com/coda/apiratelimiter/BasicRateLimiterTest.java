@@ -36,21 +36,20 @@ public class BasicRateLimiterTest extends ApiRateLimiterTestApplicationTests {
         HttpHeaders headers = new HttpHeaders();
 
         SampleRequest request = new SampleRequest();
-        request.setAuthenticationId("20");
+        request.setAuthenticationId("user1");
         request.setMessage("Hello coda");
 
         HttpEntity<SampleRequest> entity = new HttpEntity<SampleRequest>(request, headers);
 
-        //when
         ResponseEntity<String> response = null;
-        for (int i = 0; i < 19; i++) {
+        for (int i = 0; i < 15; i++) {
             response = restTemplate.exchange(
                     createURLWithPort("/sampleLimitedService"),
                     HttpMethod.POST, entity, String.class);
         }
 
-        //then
         String expected = "{\"message\":\"Rate limit exceeded\"}";
+        System.out.println(response.getBody());
         JSONAssert.assertEquals(expected, response.getBody(), false);
     }
 
